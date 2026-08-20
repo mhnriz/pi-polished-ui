@@ -2,6 +2,16 @@
 
 All notable changes to pi-polished-ui.
 
+## v1.0.1 — 2026-08-20
+
+Package release — now installable as a native Pi package.
+
+- **Pi package manifest** — added `package.json` with a `pi` manifest (`extensions: ["./extension"]`, `themes: ["./themes"]`) and the `pi-package` keyword, so Pi 0.84.2+ discovers the polished-ui extension and the `hariz-dark` / `aira-zhr` themes directly from the Git repository.
+- **Native install** — `pi install git:github.com/mhnriz/pi-polished-ui@<tag>` replaces `install.sh` as the primary installation path. No manual `~/.pi` symlinks, no file copies, no bash required.
+- **Update / uninstall** — `pi install git:github.com/mhnriz/pi-polished-ui@<new-tag>` (or `pi update --extensions`) and `pi remove git:github.com/mhnriz/pi-polished-ui`.
+- **Peer deps declared only** — `@earendil-works/pi-coding-agent` / `@earendil-works/pi-tui` listed in `peerDependencies` per Pi's package docs (Pi disables peer auto-install for managed installs; nothing is bundled).
+- No UI, theme, or behavior changes. `scripts/install.sh` remains as a fallback/manual dev-path installer.
+
 ## v1.0.0 — 2026-08-17
 
 Initial release.

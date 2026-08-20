@@ -1,0 +1,40 @@
+{
+  "name": "pi-polished-ui",
+  "version": "1.0.1",
+  "description": "A polished, terminal-native UI for Pi",
+  "keywords": [
+    "pi",
+    "pi-package",
+    "pi-extension",
+    "pi-theme",
+    "theme",
+    "tui"
+  ],
+  "license": "MIT",
+  "author": "mhnriz",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mhnriz/pi-polished-ui.git"
+  },
+  "files": [
+    "extension/",
+    "themes/"
+  ],
+  "type": "module",
+  "pi": {
+    "extensions": ["./extension"],
+    "themes": ["./themes"]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    },
+    "@earendil-works/pi-tui": {
+      "optional": true
+    }
+  }
+}

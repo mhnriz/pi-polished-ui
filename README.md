@@ -2,13 +2,14 @@
 
 A cohesive, terminal-native presentation layer for the [pi coding agent](https://github.com/earendil-works/pi). Built as a standard pi **extension** plus a **theme**. No Pi core changes, no tool overrides.
 
-**Version:** 1.0.0 · **Tested against Pi:** 0.84.2
+**Version:** 1.0.1 · **Tested against Pi:** 0.84.2
 
 ```
-polished-ui/
-├── extension/       the pi extension (auto-discovered TS sources)
-├── themes/          hariz-dark.json + aira-zhr.json (both optional; pick one)
-├── scripts/         install.sh (idempotent installer) + validate.sh (health check)
+pi-polished-ui/
+├── package.json      Pi package manifest (pi.extensions + pi.themes) — enables `pi install git:...`
+├── extension/        the pi extension (discovered via the package manifest)
+├── themes/           hariz-dark.json + aira-zhr.json (both optional; pick one)
+├── scripts/          install.sh (fallback installer) + validate.sh (health check)
 └── README.md / CHANGELOG.md / API-COMPAT.md
 ```
 
@@ -41,25 +42,70 @@ Every surface uses only **public Pi extension APIs** and **hariz-dark theme toke
 | `extension/components.ts` | Shared pure helpers: cwd shortening, `MIDDOT`/`COLLAPSE_GLYPH`, status-text sanitizing. |
 | `themes/hariz-dark.json` | The copper/muted theme (left untouched when working on aira-zhr). |
 | `themes/aira-zhr.json` | The warm dusk theme — aira-zhr palette (`BG0-3`, `FG0-4`, semantic `RED/ORANGE/GREEN/TEAL/PURPLE`). |
-| `scripts/install.sh` | Idempotent installer (copy or `--dev` symlink). |
+| `scripts/install.sh` | Fallback manual installer (copy or `--dev` symlink) — **not** needed for the Pi package install. |
 | `scripts/validate.sh` | Health check (imports, theme, API surface, render invariants). |
+| `package.json` | Pi package manifest (`pi` key). This is what makes `pi install git:...` work. |
 
 ## Installation
 
 ### Prerequisites
 
-- Pi 0.84.x with the npm-global layout (`pi` on `PATH`).
-- Bash, Node ≥ 20, and (for the render checks) a truecolor terminal.
+- Pi **0.84.2+** with the npm-global layout (`pi` on `PATH`).
+- Git and Node ≥ 20 (Pi uses them internally for package installs).
 
-### Standard (copy) install
+### Recommended: install as a Pi package
+
+pi-polished-ui is a [Pi package](https://github.com/earendil-works/pi/blob/main/docs/packages.md):
+`package.json` carries a `pi` manifest that declares the extension and themes. Install it
+with Pi's native package installer:
+
+```bash
+pi install git:github.com/mhnriz/pi-polished-ui@v1.0.1
+```
+
+What happens (all inside Pi, nothing manual):
+
+1. Pi clones the repository into `~/.pi/agent/git/github.com/mhnriz/pi-polished-ui` and pins the `v1.0.1` ref.
+2. Pi reads the `pi` manifest and registers:
+   - the polished-ui **extension** (`extension/` → `index.ts`),
+   - both **themes** (`themes/hariz-dark.json`, `themes/aira-zhr.json`).
+3. The extension activates on the next Pi start (or `/reload`); choose a theme via **Theme scope** below.
+
+No manual `~/.pi` symlinks, no file copies, no bash, no Git commands.
+
+### Updating
+
+```bash
+pi install git:github.com/mhnriz/pi-polished-ui@<new-tag>   # move to a newer pinned ref
+# or reconcile every installed package to its pinned ref:
+pi update --extensions
+```
+
+### Uninstalling
+
+```bash
+pi remove git:github.com/mhnriz/pi-polished-ui
+# alias: pi uninstall git:github.com/mhnriz/pi-polished-ui
+```
+
+Then remove `"theme": "hariz-dark"` (or `"aira-zhr"`) from `~/.pi/agent/settings.json`
+if you set it there, and restart Pi.
+
+### Fallback: script install (manual / offline)
+
+If you already cloned the repository and prefer the legacy path, `scripts/install.sh`
+still works and is idempotent (copy mode, or `--dev` symlink mode):
 
 ```bash
 cd ~/pi-polished-ui
-./scripts/install.sh            # deploys extension + theme to ~/.pi
+./scripts/install.sh            # deploys extension + themes to ~/.pi
 ./scripts/validate.sh           # optional: verify everything
 ```
 
-The installer is idempotent: it creates `~/.pi/agent/extensions/` and `~/.pi/agent/themes/` if missing, detects an existing `polished-ui` install (real dir or symlink), **backs it up** (`*.bak-<timestamp>`) before replacing, and reports every action. It never silently destroys an existing installation.
+The installer creates `~/.pi/agent/extensions/` and `~/.pi/agent/themes/` if missing,
+detects an existing `polished-ui` install (real dir or symlink), **backs it up**
+(`*.bak-<timestamp>`) before replacing, and reports every action. It never silently
+destroys an existing installation.
 
 ### Development (symlink) install
 
@@ -67,7 +113,14 @@ The installer is idempotent: it creates `~/.pi/agent/extensions/` and `~/.pi/age
 ./scripts/install.sh --dev      # or --symlink
 ```
 
-This symlinks `~/.pi/agent/extensions/polished-ui → <repo>/extension` and both themes (`hariz-dark.json`, `aira-zhr.json`) into `~/.pi/agent/themes/`. Edit the repo, then in Pi run `/reload` — changes apply immediately.
+This symlinks `~/.pi/agent/extensions/polished-ui → <repo>/extension` and both themes
+(`hariz-dark.json`, `aira-zhr.json`) into `~/.pi/agent/themes/`. Edit the repo, then in
+Pi run `/reload` — changes apply immediately.
+
+**Important:** the dev (symlink) install and the Pi package install load the same
+resources, so **do not** run `pi install git:...` on a machine that already uses the dev
+(or script) install — you would get duplicate extension surfaces. Pick one: package
+install (normal users) **or** the dev symlink install (while developing the repo).
 
 ## Theme scope
 
@@ -115,7 +168,12 @@ Documented in detail in [API-COMPAT.md](API-COMPAT.md). Highlights:
 ## Disable / uninstall
 
 - **Remove the widget only:** `ctx.ui.setWidget("polished-ui.status-lane", undefined)` (or, temporarily, `ctx.ui.setFooter(undefined)` / `setHeader(undefined)` / `setEditorComponent(undefined)`).
-- **Uninstall everything:**
+- **Uninstall the package (Pi-native):**
+  ```bash
+  pi remove git:github.com/mhnriz/pi-polished-ui
+  ```
+  Then drop `"theme": "hariz-dark"` / `"aira-zhr"` from `~/.pi/agent/settings.json` and restart Pi.
+- **Uninstall a manual/scripted install** (legacy):
   ```bash
   cd ~/pi-polished-ui
   ./scripts/install.sh --uninstall       # removes symlinks/copies, restores nothing, but reports
@@ -129,7 +187,7 @@ Documented in detail in [API-COMPAT.md](API-COMPAT.md). Highlights:
 ## Troubleshooting
 
 - **Nothing changes after editing** → run `/reload` in the active Pi session (or restart). Verify install mode: `readlink ~/.pi/agent/extensions/polished-ui` should point at the repo for `--dev`.
-- **"Theme not found"** at startup → run `./scripts/validate.sh`; confirm `~/.pi/agent/themes/hariz-dark.json` exists and `pi --use-theme hariz-dark` loads it.
+- **"Theme not found"** at startup → confirm the package is installed (`pi list`) and that the theme name is `hariz-dark` or `aira-zhr` (`pi install git:...` registers both); for a manual install, run `./scripts/validate.sh` / `pi --use-theme hariz-dark`.
 - **Odd colors** → ensure hariz-dark is the active theme (`/settings` or `--use-theme`) and your terminal supports 24-bit color (`echo $COLORTERM` = `truecolor`/`24bit`).
 - **Footprint-like artifacts / wrap** → these are Pi-core layout elements (working-loader leading line, widget-container spacer, transcript) and cannot be changed via public APIs; not a polished-ui defect.
 - **Errors referencing `jiti` or imports** → confirm the extension path is a real dir or a symlink to a readable path, then `/reload`.
@@ -145,7 +203,7 @@ cd ~/pi-polished-ui
 
 Then spot-check, in order of likely breakage:
 
-1. `readlink ~/.pi/agent/extensions/polished-ui` still resolves (install mode intact).
+1. Installed state: `pi list` shows the package; `pi update --extensions` reconciles it cleanly.
 2. `pi --offline --use-theme hariz-dark` starts without extension errors.
 3. Footer shows cwd/ctx/model correctly (metrics semantics unchanged).
 4. Status lane appears when an extension calls `ctx.ui.setStatus` (or use a scratch `/test-status` command).
