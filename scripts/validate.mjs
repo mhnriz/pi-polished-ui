@@ -16,7 +16,7 @@
 // Env: PI_PKG (pi package dir), PI_AGENT_DIR, THEME_FILE.
 //
 // Run standalone:  PI_PKG=... node scripts/validate.mjs
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { readFileSync, existsSync } from "node:fs";
 import { execSync } from "node:child_process";
 
@@ -77,7 +77,7 @@ const alias = {
 
 let jitiCreate;
 {
-	const jitiMod = await import(jitiEntry);
+	const jitiMod = await import(pathToFileURL(jitiEntry).href);
 	jitiCreate = jitiMod.createJiti ?? jitiMod.default?.createJiti ?? jitiMod.default;
 }
 const jiti = jitiCreate(import.meta.url, { alias });

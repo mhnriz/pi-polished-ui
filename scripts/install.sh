@@ -18,6 +18,7 @@
 # Targets:
 #   ~/.pi/agent/extensions/polished-ui        -> <repo>/extension
 #   ~/.pi/agent/themes/hariz-dark.json        -> <repo>/themes/hariz-dark.json
+#   ~/.pi/agent/themes/aira-zhr.json          -> <repo>/themes/aira-zhr.json
 #
 # Override the agent dir with PI_AGENT_DIR, e.g.:
 #   PI_AGENT_DIR=/srv/pi/agent ./scripts/install.sh
@@ -40,8 +41,10 @@ EXT_BASE="$AGENT_DIR/extensions"
 THEMES_BASE="$AGENT_DIR/themes"
 EXT_TARGET="$EXT_BASE/polished-ui"
 THEME_TARGET="$THEMES_BASE/hariz-dark.json"
+AIR_THEME_TARGET="$THEMES_BASE/aira-zhr.json"
 SRC_EXT="$ROOT/extension"
 SRC_THEME="$ROOT/themes/hariz-dark.json"
+SRC_AIR_THEME="$ROOT/themes/aira-zhr.json"
 
 mkdir -p "$EXT_BASE" "$THEMES_BASE"
 
@@ -77,22 +80,23 @@ install_extension() {
   fi
 }
 
-install_theme() {
-  if [[ -L "$THEME_TARGET" ]]; then
-    if points_at_repo "$THEME_TARGET"; then
-      summary+=("  unchanged (symlink already -> repo): $THEME_TARGET")
+install_theme() { # $1 = target, $2 = source
+  local target="$1" src="$2"
+  if [[ -L "$target" ]]; then
+    if points_at_repo "$target"; then
+      summary+=("  unchanged (symlink already -> repo): $target")
       return
     fi
-    backup "$THEME_TARGET"
-  elif [[ -e "$THEME_TARGET" ]]; then
-    backup "$THEME_TARGET"
+    backup "$target"
+  elif [[ -e "$target" ]]; then
+    backup "$target"
   fi
   if [[ "$MODE" == "dev" ]]; then
-    ln -s "$SRC_THEME" "$THEME_TARGET"
-    summary+=("  symlink: $THEME_TARGET -> $SRC_THEME")
+    ln -s "$src" "$target"
+    summary+=("  symlink: $target -> $src")
   else
-    cp "$SRC_THEME" "$THEME_TARGET"
-    summary+=("  copied:  $SRC_THEME -> $THEME_TARGET")
+    cp "$src" "$target"
+    summary+=("  copied:  $src -> $target")
   fi
 }
 
@@ -118,9 +122,11 @@ echo ""
 if [[ "$MODE" == "uninstall" ]]; then
   uninstall_target "$EXT_TARGET"
   uninstall_target "$THEME_TARGET"
+  uninstall_target "$AIR_THEME_TARGET"
 else
   install_extension
-  install_theme
+  install_theme "$THEME_TARGET" "$SRC_THEME"
+  install_theme "$AIR_THEME_TARGET" "$SRC_AIR_THEME"
 fi
 
 echo "Result:"
@@ -130,5 +136,6 @@ if [[ "$MODE" != "uninstall" ]]; then
   echo "Next steps:"
   echo "  ./scripts/validate.sh"
   echo "  pi --use-theme hariz-dark   (or set \"theme\": \"hariz-dark\" in ~/.pi/agent/settings.json)"
+  echo "  pi --use-theme aira-zhr     (or set \"theme\": \"aira-zhr\" in ~/.pi/agent/settings.json)"
   echo "  back in pi: /reload"
 fi

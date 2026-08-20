@@ -7,7 +7,7 @@ A cohesive, terminal-native presentation layer for the [pi coding agent](https:/
 ```
 polished-ui/
 ├── extension/       the pi extension (auto-discovered TS sources)
-├── themes/          hariz-dark.json (required)
+├── themes/          hariz-dark.json + aira-zhr.json (both optional; pick one)
 ├── scripts/         install.sh (idempotent installer) + validate.sh (health check)
 └── README.md / CHANGELOG.md / API-COMPAT.md
 ```
@@ -19,6 +19,7 @@ polished-ui/
 polished-ui gives Pi a restrained, professional, long-session-friendly appearance while staying 100% terminal-native:
 
 - **hariz-dark** — custom dark theme (copper accents, muted surfaces, no saturated full-width backgrounds).
+- **aira-zhr** — custom dark theme (warm dusk palette: blush-rose accents, muted browns, sage/teal semantic tones).
 - **Responsive footer** — cwd · git branch · token/context metrics · cost · model · thinking level, single line, drop-order-aware.
 - **Minimal header** — `π  ~/cwd · branch` + model, with a muted rule.
 - **Thinking / working presentation** — collapsed-thinking label `◆ Thinking`; restrained copper working indicator `◇ ◈ ◆ ◈`.
@@ -38,7 +39,8 @@ Every surface uses only **public Pi extension APIs** and **hariz-dark theme toke
 | `extension/editor.ts` | `PolishedEditor extends CustomEditor` — composer chrome only. |
 | `extension/status-lane.ts` | `installStatusLane(ctx, getStatuses)` — generic status lane widget. |
 | `extension/components.ts` | Shared pure helpers: cwd shortening, `MIDDOT`/`COLLAPSE_GLYPH`, status-text sanitizing. |
-| `themes/hariz-dark.json` | The theme this design is tuned against. |
+| `themes/hariz-dark.json` | The copper/muted theme (left untouched when working on aira-zhr). |
+| `themes/aira-zhr.json` | The warm dusk theme — aira-zhr palette (`BG0-3`, `FG0-4`, semantic `RED/ORANGE/GREEN/TEAL/PURPLE`). |
 | `scripts/install.sh` | Idempotent installer (copy or `--dev` symlink). |
 | `scripts/validate.sh` | Health check (imports, theme, API surface, render invariants). |
 
@@ -65,14 +67,15 @@ The installer is idempotent: it creates `~/.pi/agent/extensions/` and `~/.pi/age
 ./scripts/install.sh --dev      # or --symlink
 ```
 
-This symlinks `~/.pi/agent/extensions/polished-ui → <repo>/extension` and `~/.pi/agent/themes/hariz-dark.json → <repo>/themes/hariz-dark.json`. Edit the repo, then in Pi run `/reload` — changes apply immediately.
+This symlinks `~/.pi/agent/extensions/polished-ui → <repo>/extension` and both themes (`hariz-dark.json`, `aira-zhr.json`) into `~/.pi/agent/themes/`. Edit the repo, then in Pi run `/reload` — changes apply immediately.
 
 ## Theme scope
 
 Run `pi` with the theme for one session:
 
 ```bash
-pi --use-theme hariz-dark
+pi --use-theme hariz-dark   # copper/muted
+pi --use-theme aira-zhr     # warm dusk (blush rose + muted browns)
 ```
 
 To make it the default (edit `~/.pi/agent/settings.json`, **not** part of this repo):
@@ -81,9 +84,9 @@ To make it the default (edit `~/.pi/agent/settings.json`, **not** part of this r
 { "theme": "hariz-dark" }
 ```
 
-You can also pick it later via `/settings`. See `themes/hariz-dark.json` (schema: `$schema` URL) and the Pi `docs/themes.md`.
+You can also pick it later via `/settings`. See `themes/*.json` (schema: `$schema` URL) and the Pi `docs/themes.md`.
 
-> The theme assumes your terminal background is `#171717` and default foreground `#E8E6E3` (hariz-dark's *base* and *primary*), matching the composer/editor body text, which uses the terminal default foreground.
+> Both themes assume your terminal background matches the theme's *base* (`#171717` for hariz-dark, `#1e1210` for aira-zhr) and default foreground its *primary* (`#E8E6E3` / `#f5ede4`), matching the composer/editor body text, which uses the terminal default foreground.
 
 ## Responsive behavior
 

@@ -19,6 +19,7 @@ ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 AGENT_DIR="${PI_AGENT_DIR:-$HOME/.pi/agent}"
 EXT_DIR="$AGENT_DIR/extensions/polished-ui"
 THEME_FILE="$AGENT_DIR/themes/hariz-dark.json"
+AIR_THEME_FILE="$AGENT_DIR/themes/aira-zhr.json"
 OUT="$SCRIPT_DIR/out"
 mkdir -p "$OUT"
 
@@ -49,19 +50,25 @@ ok "pi package: $PI_PKG"
 # --- 2. install presence --------------------------------------------------
 [[ -d "$EXT_DIR" ]]  || bad "extension not installed: $EXT_DIR"
 [[ -f "$THEME_FILE" ]] || bad "theme not installed: $THEME_FILE"
+[[ -f "$AIR_THEME_FILE" ]] || bad "theme not installed: $AIR_THEME_FILE"
 if [[ -f "$EXT_DIR/index.ts" ]]; then ok "extension present ($EXT_DIR)"; else bad "extension index.ts missing"; fi
 [ -f "$THEME_FILE" ] && ok "theme present ($THEME_FILE)"
+[ -f "$AIR_THEME_FILE" ] && ok "theme present ($AIR_THEME_FILE)"
 
 # --- 3. theme parses as JSON ----------------------------------------------
-node -e 'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))' "$THEME_FILE" >/dev/null 2>"$OUT/json.err" \
-  && ok "theme parses as JSON" || { bad "theme JSON invalid:"; cat "$OUT/json.err" >&2; }
+for TF in "$THEME_FILE" "$AIR_THEME_FILE"; do
+  node -e 'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))' "$TF" >/dev/null 2>"$OUT/json.err" \
+    && ok "theme parses as JSON ($(basename "$TF"))" || { bad "theme JSON invalid ($(basename "$TF")):"; cat "$OUT/json.err" >&2; }
+done
 
 # --- 4/5/6. theme schema + API surface + import/render invariants ---------
-PI_PKG="$PI_PKG" PI_AGENT_DIR="$AGENT_DIR" THEME_FILE="$THEME_FILE" \
-  node "$SCRIPT_DIR/validate.mjs" >"$OUT/validate.log" 2>&1 \
-  && ok "theme schema + tokens + import + render invariants" \
-  || { bad "validate.mjs failed:"; cat "$OUT/validate.log" >&2; }
-tail -n 6 "$OUT/validate.log" | sed 's/^/      /' || true
+for TF in "$THEME_FILE" "$AIR_THEME_FILE"; do
+  PI_PKG="$PI_PKG" PI_AGENT_DIR="$AGENT_DIR" THEME_FILE="$TF" \
+    node "$SCRIPT_DIR/validate.mjs" >>"$OUT/validate.log" 2>&1 \
+    && ok "theme schema + tokens + import + render invariants ($(basename "$TF"))" \
+    || { bad "validate.mjs failed ($(basename "$TF")):"; cat "$OUT/validate.log" >&2; }
+  tail -n 6 "$OUT/validate.log" | sed 's/^/      /' || true
+done
 
 # --- exit -----------------------------------------------------------------
 echo ""
